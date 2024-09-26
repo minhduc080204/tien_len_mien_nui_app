@@ -2,8 +2,8 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const net = require('net');
 
-const PORT = 12345; // Cổng TCP của server
-const HOST = '127.0.0.1'; // Địa chỉ IP của server
+const PORT = 12345;
+const HOST = '0.0.0.0';
 
 let mainWindow;
 let tcpClient;
@@ -27,17 +27,17 @@ app.whenReady().then(() => {
 
   ipcMain.on('connect-tcp', () => {
     if (!tcpClient) {
-      // Kết nối đến server TCP
+    
       tcpClient = net.createConnection(PORT, HOST, () => {
         console.log('Connected to TCP server');
       });
-
-      // Xử lý dữ liệu từ server
+    
       tcpClient.on('data', (data) => {
-        mainWindow.webContents.send('tcp-data', data.toString());
+        mainWindow.webContents.send('tcp-data', JSON.parse(data));
+        console.log("ok ", JSON.parse(data));
+        
       });
 
-      // Xử lý sự kiện ngắt kết nối
       tcpClient.on('end', () => {
         console.log('Disconnected from TCP server');
       });
@@ -45,8 +45,6 @@ app.whenReady().then(() => {
   });
 
   ipcMain.on('disconnect-tcp', ()=>{
-    console.log("????");
-    
     if(tcpClient){
       tcpClient.end(() => {
         console.log('TCP connection closed');

@@ -2,10 +2,8 @@ import { Component } from 'react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.scss';
-import ErrorPage from './pages/ErrorPage';
 import GamePage from './pages/GamePage';
 import HomePage from './pages/HomePage';
-import { ClipLoader, PacmanLoader } from 'react-spinners';
 
 class App extends Component {
   constructor(props) {
@@ -19,22 +17,36 @@ class App extends Component {
     }
   }
 
+  componentDidMount() {
+    window.api.connectTCP();
+  }
+
   handleChangeUserName = () => (event) => {
     this.setState({
       userName: event.target.value
     });
   }
+  
   handleChangeRoomId = () => (event) => {
     this.setState({
       roomId: event.target.value
     });
   }
+
   handleLogin = () => {
     toast.success("Lỗi: không thể tham gia !")
+
+    const mess = {
+      roomId: this.state.roomId,
+      name: this.state.userName,
+      message: "",
+      type: 'JOIN',
+    }
+    window.api.sendTCP(JSON.stringify(mess));
     this.setState({
       login: true,
       roomIDEntry: this.state.roomId,
-    });    
+    });
     return (
       <ToastContainer
         position="top-right"
@@ -50,13 +62,22 @@ class App extends Component {
       />
     )
   }
+
   handleLogout = () => {
     toast.error("Lỗi: không thể tham gia !")
-    window.api.disconnectTCP();
+
+    const mess = {
+      roomId: this.state.roomId,
+      name: this.state.userName,
+      message: "",
+      type: 'OUT',
+    }
+    window.api.sendTCP(JSON.stringify(mess));    
     this.setState({
       login: false,
     });
   }
+
   render() {
     const visibleLogin = !this.state.login;
 
@@ -69,7 +90,7 @@ class App extends Component {
           onLogin={() => this.handleLogin()}
         ></HomePage>
       )
-    }    
+    }
 
     return (<>
       <GamePage

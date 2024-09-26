@@ -1,11 +1,9 @@
 import React, { Component } from "react";
 import { Fade } from "react-bootstrap";
+import { PacmanLoader } from "react-spinners";
 import ChatRoom from "../components/ChatRoom";
 import PlayArea from "../components/playarea/PlayArea";
 import BackCard from "../components/playarea/components/BackCard";
-import SockJS from "sockjs-client";
-import { Stomp } from "@stomp/stompjs";
-import { PacmanLoader } from "react-spinners";
 
 class GamePage extends Component {
     constructor(props) {
@@ -23,59 +21,49 @@ class GamePage extends Component {
     }
 
     componentDidMount() {
-        if (this.props.roomId) {
-            window.api.connectTCP();
+        if (this.props.roomId) {            
             this.setState({ loading: false })
 
-            window.api.onTCPData((data) => {
-                const mess = JSON.parse(data);
-                
+            window.api.onTCPData((data) => { 
+
+                if(data.hand){
+                    this.setState({
+                        hand: data.hand
+                    })
+                    return;
+                }
+
+                if(data.card){
+                    this.setState({
+                        card: data.card
+                    })
+                    return;
+                }
+
                 this.setState((prevState) => ({
-                    messages: [...prevState.messages, mess]
+                    messages: [...prevState.messages, data]
                 }));
             });
-
-            // const socket = new SockJS('http://localhost:8080/game');
-            // const stompClient = Stomp.over(socket);
-
-            // stompClient.connect({}, () => {
-            //     stompClient.subscribe(`/topic/${this.props.roomId}`, (msg) => {
-            //         this.setState({
-            //             hand: JSON.parse(msg.body)
-            //         })
-
-            //     });
-
-            //     stompClient.subscribe(`/topic/chat/${this.props.roomId}`, (msg) => {
-            //         const receivedMessage = JSON.parse(msg.body);
-            //         this.setState(prevState => ({
-            //             messages: [...prevState.messages, receivedMessage]
-            //         }));
-
-            //     });
-            //     this.setState({ loading: false, stompClient: stompClient });
-            // }, (error) => {
-            //     // Xử lý lỗi kết nối nếu cần
-            //     console.error('STOMP connection error:', error);
-            // });
-
-        }
+        }                
     }
 
     handleGetHand = () => {
-        if (this.state.stompClient) {
-            this.state.stompClient.send(
-                `/app/game/${this.props.roomId}`,
-                {},
-            );
+        const mess = {
+            roomId: this.props.roomId,
+            name: this.props.userName,
+            message: this.state.message,
+            type: 'START',
         }
+        window.api.sendTCP(JSON.stringify(mess));
     }
 
     handleSendMessage = () => {
         if (this.state.message.trim()) {
             const mess = {
-                from: this.props.userName,
-                content: this.state.message
+                roomId: this.props.roomId,
+                name: this.props.userName,
+                message: this.state.message,
+                type: 'CHAT',
             }
             window.api.sendTCP(JSON.stringify(mess));
             this.setState({
@@ -100,15 +88,23 @@ class GamePage extends Component {
 
     handleAttack = () => {
         const inputs = document.getElementsByClassName("card_input");
-        this.state.card = []
+        this.state.card = [];
         for (let i = inputs.length - 1; i >= 0; i--) {
             if (inputs[i].checked) {
                 this.state.card.push(this.state.hand.splice(i, 1)[0])
             }
         }
-        this.setState({
+        const mess = {
+            roomId: this.props.roomId,
+            name: this.props.userName,
             hand: this.state.hand,
             card: this.state.card,
+            type: 'ATTACK',
+        }
+        window.api.sendTCP(JSON.stringify(mess));
+
+        this.setState({
+            hand: this.state.hand,
         })
     }
 

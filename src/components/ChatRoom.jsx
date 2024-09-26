@@ -12,11 +12,11 @@ class ChatRoom extends Component {
     } = this.props
     return (
       <div className='chatRoom'>
-        <dic className='boxMessages' >
+        <div className='boxMessages' >
           {messages&&(messages.map((msg, index) => (
-            <div key={index}><b>{msg.from+": "}</b> {msg.content}</div>
+            <div key={index}><b>{msg.name+": "}</b> {msg.message}</div>
           )))}
-        </dic>
+        </div>
         <div className='inputChatForm'>
         <button
           onClick={onMicClick}

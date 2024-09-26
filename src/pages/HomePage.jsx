@@ -1,6 +1,5 @@
 import { Component } from "react";
 import { Fade } from "react-bootstrap";
-import { ClipLoader } from "react-spinners";
 
 class HomePage extends Component {
     render() {
