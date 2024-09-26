@@ -1,109 +1,152 @@
+const { log } = require('console');
 const net = require('net');
 
 const PORT = 12345;
 const HOST = '0.0.0.0';
 
-let roomall = [];
+let ROOMALL = [];
+let ROOMS = [];
 
-let rooms = {
-  1:[cl1, cl2, cl3],
-  20: [],
+const ranks = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 20];
+const suits = [1, 2, 3, 4];
+let desk = []
+
+ROOMS[0] = {
+    players: [
+        {
+            socket: "",
+            hand: [{
+                rank: 1,
+                suit: 1,
+            }],
+            status: false,
+        }
+    ],
+    desk: [{
+        rank: 1,
+        suit: 1,
+    }],
+    card: [],
 }
-const server = net.createServer((socket) => {
-  console.log('Client connected');
-  clients.push(socket);
 
-  socket.on('data', (data) => {
-    try {
-      const res = JSON.parse(data);
-      const roomId = res.roomId;
-      const name = res.name;
-      const message = res.message;
-      const type = res.type;
-      
-      clients.forEach((client) => {
-        client.write(data);     
-        console.log("OKK");
-           
-      });
-    } catch (error) {
-      console.error('Error parsing data:', error);
+ranks.forEach((rank) => {
+    suits.forEach((suit) => {
+        desk.push({
+            rank: rank,
+            suit: suit,
+        })
+    })
+})
+
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
     }
-  });
+    return array;
+}
 
-  socket.on('end', () => {
-    console.log('Client disconnected');
-    clients = clients.filter(cl => cl !== socket);
-  });
+const DESK = shuffle(desk);
 
-  socket.on('error', (err) => {
-    console.error('Socket error:', err);
-  });
+const server = net.createServer((socket) => {
+    console.log('Client connected');
+    ROOMALL.push(socket);
+    socket.on('data', (data) => {
+        try {
+            const { roomId, name, message, type} = JSON.parse(data);
+
+            if (type === 'JOIN') {
+                if (!ROOMS[roomId]) {
+                    ROOMS[roomId] = {};
+                }
+
+                if (!ROOMS[roomId].players) {
+                    ROOMS[roomId].players = [];
+                }
+
+                if (ROOMS[roomId].players.length > 3) {
+                    console.log("FULL PLAYER");
+                    return;
+                }
+
+                ROOMS[roomId].players.push({ id: socket.id, socket: socket, hand: null });
+                ROOMS[roomId].players.forEach((player) => {
+                    player.socket.write(JSON.stringify({ roomId: roomId, name: 'THÔNG BÁO', message: `Anh ${name} tới chơi. YEAH !!` }));
+                });
+                console.log(`Client joined room ${roomId}`);
+            }
+
+            if (type === 'OUT') {
+                if (ROOMS[roomId].players.length == 1) {
+                    console.log("out of room: ", roomId);
+                    delete ROOMS[roomId];
+                    return;
+                }
+                ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);
+
+            }
+
+            if (type === 'CHAT') {
+                console.log(`Attack from ${name} in room ${roomId}: ${message}.SIZE: ${ROOMS[roomId].players.length}`);
+                ROOMS[roomId].players.forEach((player) => {
+                    player.socket.write(data);
+                });
+            }
+
+            if (type === 'START') {
+                console.log(`Attack from ${name} in room ${roomId}: ${message}.SIZE: ${ROOMS[roomId].players.length}`);
+
+                ROOMS[roomId].desk = [...shuffle(DESK)];
+                ROOMS[roomId].players.forEach((player) => {
+                    player.hand = ROOMS[roomId].desk.splice(0, 13);
+                    player.socket.write(JSON.stringify({ hand: player.hand }));
+                });
+            }
+
+            if (type === 'ATTACK') {
+                const card = JSON.parse(data).card;
+                const hand = JSON.parse(data).hand;
+
+                ROOMS[roomId].players.forEach((player) => {
+                    let isWin = false;
+                    player.socket.write(JSON.stringify({ card: card }));
+
+                    if (player.socket == socket) {
+                        player.hand = hand;
+
+                        if (player.hand.length == 0) {
+                            isWin=true;
+                        }
+                    }
+
+                    if(isWin){
+                        console.log("ƯINNNNN");
+                        
+                        player.socket.write(JSON.stringify({
+                            roomId: roomId, 
+                            name: 'THÔNG BÁO', 
+                            message: ` ${name} CHIẾN THẮNG. YEAH !!`,
+                        }));
+                    }
+                });
+
+            }
+
+        } catch (error) {
+            console.error('Error parsing data:', error);
+        }
+    });
+
+    socket.on('end', () => {
+        console.log('Client disconnected');
+        ROOMALL = ROOMALL.filter(player => player !== socket);
+    });
+
+    socket.on('error', (err) => {
+        console.error('Socket error:', err);
+    });
 });
 
-
-
-// // let rooms = [];
-// let client = [];
-
-// const server = net.createServer((socket) => {
-//   console.log('Client connected');
-//   client.push(socket);    
-
-//   socket.on('data', (data) => {
-//     const res = JSON.parse(data);
-//     const roomId = res.roomId
-//     const message = res.message
-//     const type = res.type
-
-//     client.forEach(cl=>{
-//       console.log("writeent0000");
-//       cl.write(message);
-//       if(cl !== socket){
-//         cl.write(message);
-//         console.log("writeent");
-        
-//       }
-//     })
-    
-
-//     // if (type === 'join') {
-
-//     //   if (!rooms[roomId]) {
-//     //     rooms[roomId] = [socket];
-//     //     return;
-//     //   }
-
-//     //   if (rooms[roomId].length>=4) {
-        
-//     //   }
-
-//     //   rooms[roomId].push(socket);      
-//     // }
-    
-//     // if (type === 'chat') {
-      
-//     //   rooms[roomId].forEach(client => {
-//     //     if (client !== socket) {
-//     //       client.write(message);
-//     //     }
-//     //   });
-      
-//     // }
-    
-    
-//   });
-
-//   socket.on('end', () => {
-//     console.log('Client disconnected');
-//     clients = clients.filter((client) => client !== socket);
-//   });
-
-//   socket.on('error', (err) => {
-//     console.log(`Error: ${err.message}`);
-//   });
-// });
-
 server.listen(PORT, HOST, () => {
-  console.log(`Server listening on ${HOST}:${PORT}`);
+    console.log(`Server listening on ${HOST}:${PORT}`);
 });
