@@ -1,4 +1,3 @@
-const { log } = require('console');
 const net = require('net');
 
 const PORT = 12345;

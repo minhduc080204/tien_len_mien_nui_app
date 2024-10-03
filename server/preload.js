@@ -1,10 +1,8 @@
-window.addEventListener('DOMContentLoaded', () => {
-    const replaceText = (selector, text) => {
-      const element = document.getElementById(selector)
-      if (element) element.innerText = text
-    }
-  
-    for (const type of ['chrome', 'node', 'electron']) {
-      replaceText(`${type}-version`, process.versions[type])
-    }
-  })
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('api', {
+  startServer: () => ipcRenderer.send('start-server'),
+  stopServer: () => ipcRenderer.send('stop-server'),
+  // sendTCP: (message) => ipcRenderer.send('send-tcp', message),
+  // onTCPData: (callback) => ipcRenderer.on('tcp-data', (event, data) => callback(data))
+});
