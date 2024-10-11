@@ -7,7 +7,7 @@ class OnlineTab extends Component {
         this.state = {
             isStartServer: false,
             isShowAlert: false,
-            selectedRoomId: null,
+            selectedRoomId: null,            
         }
     }
 
@@ -26,27 +26,32 @@ class OnlineTab extends Component {
     }
 
     render() {
-
+        const { numberPlayerOnline, ROOMS } = this.props
         return (<>
             <Container className="bg-white p-1 m-1 mt-0 rounded border" onClick={() => {
                 console.log("ok");
             }}>
                 <h3>Online Tab</h3>
+                <p className="text-center text-success">{numberPlayerOnline} player Online</p>
             </Container>
             <Container className="tab-item" fluid>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((item) => {
+                {ROOMS && (ROOMS.map((room, key) => {
                     return (
-                        <Container fluid className="p-1 m-1 rounded border" key={item}>
+                        <Container fluid className="p-1 m-1 rounded border" key={key}>
                             <Row>
-                                <Col><p>Room Id: {item}</p></Col>
+                                <Col xs={1}></Col>
+                                <Col>
+                                    <p>Room: <span className="fw-bold">{room.roomId}</span></p>
+                                    <p className="text-success fw-bold">{room.numberPlayerPlaying} playing</p>
+                                </Col>
                                 <Col><Button
                                     variant="danger"
-                                    onClick={() => this.handleStopRoom(item)}
+                                    onClick={() => this.handleStopRoom(room.roomId)}
                                 >STOP</Button></Col>
                             </Row>
                         </Container>
                     );
-                })}
+                }))}
             </Container>
 
 

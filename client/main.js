@@ -19,7 +19,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.loadURL('http://localhost:3000');    
+    mainWindow.loadURL('http://localhost:3001');    
 }
 
 app.whenReady().then(() => {

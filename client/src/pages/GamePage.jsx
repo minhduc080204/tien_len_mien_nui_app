@@ -35,7 +35,7 @@ class GamePage extends Component {
 
                 if(data.card){
                     this.setState({
-                        card: data.card
+                        card: data.card.reverse()
                     })
                     return;
                 }

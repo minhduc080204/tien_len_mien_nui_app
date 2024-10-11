@@ -1,5 +1,9 @@
 @import '~bootstrap/scss/bootstrap';
 
+p{
+  margin: 0;
+}
+
 body{
   overflow: hidden;
 }
@@ -33,4 +37,20 @@ h2, h3, h4{
   display: flex;
   flex-direction: column;
   height: 100%;
+}
+
+.messageAll label{
+  color: black;
+}
+
+.messageAll:nth-child(3n+1){
+  color: red;
+}
+
+.messageAll:nth-child(3n+2){
+  color: green;
+}
+
+.messageAll:nth-child(3n+3){
+  color: darkorange;
 }

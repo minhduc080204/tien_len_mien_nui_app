@@ -10,7 +10,7 @@ class App extends Component {
     super(props);
     this.state = {
       login: false,
-      roomId: null,
+      roomId: 1000,
       userName: null,
       messages: [],
       roomIDEntry: null,

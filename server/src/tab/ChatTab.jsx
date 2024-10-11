@@ -5,79 +5,71 @@ class ChatTab extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            isStartServer: false,
-            isShowAlert: false,
-            selectedRoomId: null,
+
         }
     }
 
-    handleStopRoom(roomId) {
-        this.setState({
-            isShowAlert: true,
-            selectedRoomId: roomId,
-        })
-    }
+    renderMessage() {
+        const ROOMS = this.props.ROOMS
+        const chatRoomIdSelected = this.props.chatRoomIdSelected
 
-    stoproom() {
-        this.setState({
-            isShowAlert: false,
-            selectedRoomId: null,
-        })
+        if (ROOMS && chatRoomIdSelected) {            
+            if (chatRoomIdSelected == 0) {
+                return ROOMS.map((room, key) => {
+                    return <p key={key} className="messageAll">{room.messages&&(room.messages.map((message, key2)=>{
+                        return <p key={key2}><span className="fw-bold ">{`Room: ${room.roomId} | ${message.name}`}: </span><label>{message.message}</label></p>
+                    }))}</p>                                         
+                })
+            } else {
+                return <p className="messageAll">{ROOMS[chatRoomIdSelected].messages&&(ROOMS[chatRoomIdSelected].messages.map((message, key) => {
+                    return <p key={key}><span className="fw-bold ">{`Room: ${chatRoomIdSelected} | ${message.name}`}: </span><label>{message.message}</label></p>
+                }))}</p>                                                                         
+            }
+        }
     }
 
     render() {
-
+        const {
+            ROOMS,
+            chatRoomIdSelected,
+            message,
+            onChangeMessage,
+            onSendMessage,
+            onChatRoomIdSelected,
+        } = this.props
         return (<Container className="ChatContainer">
             <Container className="bg-white p-1 m-1 mt-0 rounded border" onClick={() => {
-                console.log("ok");
+
             }}>
-                <h3>Chat Tab</h3>
+                <h3>Chat Tab <span className="text-success">({chatRoomIdSelected == 0 ? 'All' : chatRoomIdSelected})</span></h3>
             </Container>
             <Container className="tab-item" style={{ flexGrow: 1 }} fluid>
-                <p>hiii</p>
-                <p>hiii</p>
-                <p>hiii</p>
+                {this.renderMessage()}
             </Container>
 
-            <Container fluid style={{ display:"flex", gap:20 }} className="mt-2">
+            <Container fluid style={{ display: "flex", gap: 20 }} className="mt-2">
                 <InputGroup>
                     <Form.Control
-                        placeholder="Thông báo cho client..."
-                        aria-label="Thông báo cho client..."
+                        placeholder={chatRoomIdSelected == 0 ? "Thông báo cho tất cả..." : "Thông báo cho roomId " + chatRoomIdSelected + "..."}
+                        aria-label={chatRoomIdSelected == 0 ? "Thông báo cho tất cả..." : "Thông báo cho roomId " + chatRoomIdSelected + "..."}
+                        onChange={onChangeMessage()}    
+                        value={message}                    
                         aria-describedby="basic-addon2"
                     />
-                    <Button variant="outline-secondary" id="button-addon2">
+                    <Button variant="outline-secondary" id="button-addon2" onClick={()=>onSendMessage()}>
                         Gửi
                     </Button>
                 </InputGroup>
-                <Form.Select aria-label="Default select example" style={{ width:130 }}>
+                <Form.Select
+                    aria-label="Default select example" style={{ width: 130 }}
+                    onChange={onChatRoomIdSelected()}
+                >
                     <option value="0">All</option>
-                    <option value="1">Room: 1</option>
-                    <option value="2">Room: 2</option>
-                    <option value="3">Room: 3</option>
+                    {ROOMS && (ROOMS.map((room, key) => {
+                        return <option key={key} value={key}>Room: {room.roomId}</option>
+                    }))}
                 </Form.Select>
             </Container>
-
-
-            <Alert show={this.state.isShowAlert} variant="" className="alertContain fixed-top">
-                <div className=" border border-3 rounded bg-white p-3">
-                    <Alert.Heading>STOP ROOM ID: {this.state.selectedRoomId}</Alert.Heading>
-                    <p>
-                        Duis mollis, est non commodo luctus, nisi erat porttitor ligula, eget
-                        lacinia odio sem nec elit. Cras mattis consectetur purus sit amet
-                        fermentum.
-                    </p>
-                    <hr />
-                    <div className="d-flex justify-content-end gap-4">
-                        <Button onClick={() => this.stoproom()} variant="outline-secondary">
-                            Cancel
-                        </Button>
-                        <Button onClick={() => this.stoproom()} variant="outline-danger">
-                            STOP
-                        </Button>
-                    </div>
-                </div>
-            </Alert>
         </Container>)
     }
 }

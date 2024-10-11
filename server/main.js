@@ -15,6 +15,7 @@ const suits = [1, 2, 3, 4];
 let desk = []
 
 ROOMS[0] = {
+  messages: [{name: "test", message: "alooooooo"}],
   players: [
     {
       socket: "",
@@ -51,13 +52,28 @@ function shuffle(array) {
 
 const DESK = shuffle(desk);
 
-
 let tcpServer;
+let mainWindow;
+
+function updateInformation() {
+  let roomstmp = []
+  ROOMS.map((room, index) => {
+    roomstmp.push({
+      roomId: index,
+      messages: room.messages,
+      numberPlayerPlaying: room.players.length,
+    })
+  })
+  mainWindow.webContents.send('tcp-data', JSON.stringify({
+    numberPlayerOnline: ROOMALL.length,
+    Rooms: roomstmp,
+  }));
+}
 
 function createWindow() {
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -73,12 +89,12 @@ app.whenReady().then(() => {
   createWindow()
 
   ipcMain.on('start-server', () => {
-    console.log("siuuu");
-    
     if (!tcpServer) {
       tcpServer = net.createServer((socket) => {
-        console.log('Client connected');
+
         ROOMALL.push(socket);
+        updateInformation()
+
         socket.on('data', (data) => {
           try {
             const { roomId, name, message, type } = JSON.parse(data);
@@ -90,6 +106,7 @@ app.whenReady().then(() => {
 
               if (!ROOMS[roomId].players) {
                 ROOMS[roomId].players = [];
+                ROOMS[roomId].messages = [];
               }
 
               if (ROOMS[roomId].players.length > 3) {
@@ -107,19 +124,22 @@ app.whenReady().then(() => {
             if (type === 'OUT') {
               if (ROOMS[roomId].players.length == 1) {
                 console.log("out of room: ", roomId);
-                delete ROOMS[roomId];
+                delete ROOMS[roomId];                
                 return;
               }
-              ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);
-
+              ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);              
             }
 
-            if (type === 'CHAT') {
-              console.log(`Attack from ${name} in room ${roomId}: ${message}.SIZE: ${ROOMS[roomId].players.length}`);
+            if (type === 'CHAT') {              
+              ROOMS[roomId].messages.push({
+                name: name,
+                message: message,
+              })
               ROOMS[roomId].players.forEach((player) => {
                 player.socket.write(data);
               });
-            }
+              
+            }            
 
             if (type === 'START') {
               console.log(`Attack from ${name} in room ${roomId}: ${message}.SIZE: ${ROOMS[roomId].players.length}`);
@@ -162,12 +182,20 @@ app.whenReady().then(() => {
 
           } catch (error) {
             console.error('Error parsing data:', error);
+          } finally{
+            updateInformation();
           }
         });
 
         socket.on('end', () => {
-          console.log('Client disconnected');
+          ROOMS.map(room=>{
+            room.players = room.players.filter(player => player.socket !== socket);   
+            if(room.players.length==0){
+              delete room.players;
+            }
+          })
           ROOMALL = ROOMALL.filter(player => player !== socket);
+          console.log('Client disconnected');
         });
 
         socket.on('error', (err) => {
@@ -177,7 +205,7 @@ app.whenReady().then(() => {
 
       tcpServer.listen(PORT, HOST, () => {
         console.log(`Server listening on ${HOST}:${PORT}`);
-      });      
+      });
     }
   });
 
@@ -185,10 +213,25 @@ app.whenReady().then(() => {
     if (tcpServer) {
       tcpServer.close()
       console.log("Server is closed");
-      
-      tcpServer=null;
+      tcpServer = null;
     }
   })
+
+  ipcMain.on('send-tcp', (event, data) => {
+    if (tcpServer) {
+      const { roomId, name, message } = JSON.parse(data);                  
+      ROOMS[roomId].players.forEach((player) => {
+        player.socket.write(data);
+      });
+      
+      ROOMS[roomId].messages.push({
+        name: name,
+        message: message,
+      })
+      
+      updateInformation()
+    }
+  });
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
