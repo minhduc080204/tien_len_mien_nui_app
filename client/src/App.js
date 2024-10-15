@@ -34,7 +34,7 @@ class App extends Component {
   }
 
   handleLogin = () => {
-    toast.success("Lỗi: không thể tham gia !")
+    toast.success("HAving FuN 🤞😘")
 
     const mess = {
       roomId: this.state.roomId,

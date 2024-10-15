@@ -4,6 +4,9 @@ import { PacmanLoader } from "react-spinners";
 import ChatRoom from "../components/ChatRoom";
 import PlayArea from "../components/playarea/PlayArea";
 import BackCard from "../components/playarea/components/BackCard";
+import { toast, ToastContainer } from "react-toastify";
+import { CountdownCircleTimer } from "react-countdown-circle-timer";
+import PlayerArea from "../components/PlayerArea";
 
 class GamePage extends Component {
     constructor(props) {
@@ -15,25 +18,30 @@ class GamePage extends Component {
             message: "",
             onMic: false,
             stompClient: null,
-            loading: true,
+            isLoading: true,
+            isPlaying: false,
+            isTurn: false,
+            player1: { isIn: false, isTurn: null, number: null, name: "" },
+            player2: { isIn: true, isTurn: null, number: 13, name: "Duy" },
+            player3: { isIn: true, isTurn: null, number: 13, name: "Châu" },
         }
 
     }
 
     componentDidMount() {
-        if (this.props.roomId) {            
-            this.setState({ loading: false })
+        if (this.props.roomId) {
+            this.setState({ isLoading: false })
 
-            window.api.onTCPData((data) => { 
+            window.api.onTCPData((data) => {
 
-                if(data.hand){
+                if (data.hand) {
                     this.setState({
                         hand: data.hand
                     })
                     return;
                 }
 
-                if(data.card){
+                if (data.card) {
                     this.setState({
                         card: data.card.reverse()
                     })
@@ -44,7 +52,7 @@ class GamePage extends Component {
                     messages: [...prevState.messages, data]
                 }));
             });
-        }                
+        }
     }
 
     handleGetHand = () => {
@@ -55,6 +63,10 @@ class GamePage extends Component {
             type: 'START',
         }
         window.api.sendTCP(JSON.stringify(mess));
+        this.setState({
+            isPlaying: true,
+            isTurn: true,
+        })
     }
 
     handleSendMessage = () => {
@@ -67,7 +79,13 @@ class GamePage extends Component {
             }
             window.api.sendTCP(JSON.stringify(mess));
             this.setState({
-                message: ""
+                message: "",
+                player1: {
+                    isIn: true,
+                    isTurn: true,
+                    number: 12,
+                    name: "Loan"
+                }
             })
         }
     }
@@ -78,8 +96,6 @@ class GamePage extends Component {
         });
     }
 
-
-
     handleSortCart = () => {
         this.setState({
             hand: this.state.hand.sort((a, b) => a.rank - b.rank)
@@ -87,25 +103,136 @@ class GamePage extends Component {
     }
 
     handleAttack = () => {
+        if (!this.state.isTurn) {
+            toast("Chưa đến lượt của bạn !");
+            return;
+        }
+
         const inputs = document.getElementsByClassName("card_input");
-        this.state.card = [];
+
+
+        let cardSelected = [];
+        let handTmp = [...this.state.hand];
         for (let i = inputs.length - 1; i >= 0; i--) {
             if (inputs[i].checked) {
-                this.state.card.push(this.state.hand.splice(i, 1)[0])
+                cardSelected.push(handTmp.splice(i, 1)[0])
             }
         }
+
+        cardSelected = cardSelected.sort((a, b) => a.rank - b.rank)
+
+        if (cardSelected.length == 0) {
+            toast("Hãy chọn bài !");
+            return;
+        }
+
+        console.log(cardSelected, "selected");
+        console.log(this.state.card, "surent");
+
+        if(!this.checkValidCard(cardSelected)){
+            toast("Hãy chọn bài !!!!!!!!!");
+            return;
+        }
+
+        console.log("SENDDED");
+        
+
+        // if (this.state.card.length != 0) {
+        //     if (this.state.card.length != cardSelected.length) {
+        //         toast("Bài đánh không hợp lệ !")
+        //         return;
+        //     }
+
+        //     // 1 lá
+        //     if (this.state.card.length == 1) {                
+        //         if (this.state.card[0].rank > cardSelected[0].rank) {
+        //             toast("Bài đánh không hợp lệ !")
+        //             return;
+        //         }
+
+        //         if (this.state.card[0].rank == cardSelected[0].rank) {
+        //             if (this.state.card[0].suit > cardSelected[0].suit) {
+        //                 toast("Bài đánh không hợp lệ !")
+        //                 return;
+        //             }
+        //         }
+        //     }
+
+        //     // 2 lá
+        //     if(this.state.card.length == 2) {
+
+        //         // logic
+        //     }
+        // }
+
         const mess = {
             roomId: this.props.roomId,
             name: this.props.userName,
-            hand: this.state.hand,
-            card: this.state.card,
+            hand: handTmp,
+            card: cardSelected,
             type: 'ATTACK',
         }
         window.api.sendTCP(JSON.stringify(mess));
 
         this.setState({
-            hand: this.state.hand,
+            hand: handTmp,
         })
+    }
+
+    checkValidCard = (cardSelected) => {
+        
+        if(cardSelected.length<2){
+            return true;
+        }
+
+        const basevl = cardSelected[1].rank-cardSelected[0].rank;
+        
+        if(basevl>1){
+            return false;
+        }
+
+        if(basevl==1 && cardSelected.length==2){
+            return false;
+        }
+
+        for(let i=0;i<cardSelected.length-1;i++){
+            if(cardSelected[i+1].rank-cardSelected[i].rank!=basevl){
+                return false;
+            }
+        }
+        return true;
+        
+    }
+
+
+    handleEndOfTime() {
+        this.setState(prevState => ({
+            // isTurn: false,
+            player1: {
+                isIn: prevState.player1.isIn,
+                isTurn: false,
+                number: prevState.player1.number,
+                name: prevState.player1.name,
+            },
+            player2: {
+                isIn: prevState.player2.isIn,
+                isTurn: false,
+                number: prevState.player2.number,
+                name: prevState.player2.name,
+            },
+            player3: {
+                isIn: prevState.player3.isIn,
+                isTurn: false,
+                number: prevState.player3.number,
+                name: prevState.player3.name,
+            }
+        }))
+    }
+
+    handleMicClick = () => {
+        this.setState({
+            onMic: !this.state.onMic
+        });
     }
 
     renderCard = (card) => {
@@ -173,12 +300,6 @@ class GamePage extends Component {
         </>)
     }
 
-    handleMicClick = () => {
-        this.setState({
-            onMic: !this.state.onMic
-        });
-    }
-
     render() {
         const {
             roomId,
@@ -223,13 +344,44 @@ class GamePage extends Component {
                     renderCard={(card) => this.renderCard(card)}
                     card={this.state.card}
                 ></BackCard>
+                <button onClick={() => this.handleGetHand()}>Chia bài</button>
                 <PlayArea
                     hand={this.state.hand}
-                    onGetHand={() => this.handleGetHand()}
+                    isPlaying={this.state.isPlaying}
+                    isTurn={this.state.isTurn}
+                    onEndOfTime={() => this.handleEndOfTime()}
                     onSortCart={() => this.handleSortCart()}
                     onAttack={() => this.handleAttack()}
                     renderCard={(card) => this.renderCard(card)}
                 ></PlayArea>
+                <div className="playerArea">
+                    <PlayerArea
+                        isPlayer1={true}
+                        player={this.state.player1}
+                        onEndOfTime={() => this.handleEndOfTime()}
+                    ></PlayerArea>
+                    <PlayerArea
+                        player={this.state.player2}
+                        onEndOfTime={() => this.handleEndOfTime()}
+                    ></PlayerArea>
+                    <PlayerArea
+                        player={this.state.player3}
+                        onEndOfTime={() => this.handleEndOfTime()}
+                    ></PlayerArea>
+                </div>
+
+                <ToastContainer
+                    position="top-left"
+                    autoClose={2500}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="light"
+                />
             </div>
         </Fade>)
     };

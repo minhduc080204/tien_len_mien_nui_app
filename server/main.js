@@ -15,7 +15,7 @@ const suits = [1, 2, 3, 4];
 let desk = []
 
 ROOMS[0] = {
-  messages: [{name: "test", message: "alooooooo"}],
+  messages: [{ name: "test", message: "alooooooo" }],
   players: [
     {
       socket: "",
@@ -32,6 +32,8 @@ ROOMS[0] = {
   }],
   card: [],
 }
+
+
 
 ranks.forEach((rank) => {
   suits.forEach((suit) => {
@@ -58,11 +60,13 @@ let mainWindow;
 function updateInformation() {
   let roomstmp = []
   ROOMS.map((room, index) => {
-    roomstmp.push({
-      roomId: index,
-      messages: room.messages,
-      numberPlayerPlaying: room.players.length,
-    })
+    if (room.players) {
+      roomstmp.push({
+        roomId: index,
+        messages: room.messages,
+        numberPlayerPlaying: room.players.length,
+      })
+    }
   })
   mainWindow.webContents.send('tcp-data', JSON.stringify({
     numberPlayerOnline: ROOMALL.length,
@@ -124,13 +128,13 @@ app.whenReady().then(() => {
             if (type === 'OUT') {
               if (ROOMS[roomId].players.length == 1) {
                 console.log("out of room: ", roomId);
-                delete ROOMS[roomId];                
+                delete ROOMS[roomId];
                 return;
               }
-              ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);              
+              ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);
             }
 
-            if (type === 'CHAT') {              
+            if (type === 'CHAT') {
               ROOMS[roomId].messages.push({
                 name: name,
                 message: message,
@@ -138,8 +142,8 @@ app.whenReady().then(() => {
               ROOMS[roomId].players.forEach((player) => {
                 player.socket.write(data);
               });
-              
-            }            
+
+            }
 
             if (type === 'START') {
               console.log(`Attack from ${name} in room ${roomId}: ${message}.SIZE: ${ROOMS[roomId].players.length}`);
@@ -182,19 +186,20 @@ app.whenReady().then(() => {
 
           } catch (error) {
             console.error('Error parsing data:', error);
-          } finally{
+          } finally {
             updateInformation();
           }
         });
 
         socket.on('end', () => {
-          ROOMS.map(room=>{
-            room.players = room.players.filter(player => player.socket !== socket);   
-            if(room.players.length==0){
+          ROOMS.map(room => {
+            room.players = room.players.filter(player => player.socket !== socket);
+            if (room.players.length == 0) {
               delete room.players;
             }
           })
           ROOMALL = ROOMALL.filter(player => player !== socket);
+          updateInformation()
           console.log('Client disconnected');
         });
 
@@ -219,16 +224,16 @@ app.whenReady().then(() => {
 
   ipcMain.on('send-tcp', (event, data) => {
     if (tcpServer) {
-      const { roomId, name, message } = JSON.parse(data);                  
+      const { roomId, name, message } = JSON.parse(data);
       ROOMS[roomId].players.forEach((player) => {
         player.socket.write(data);
       });
-      
+
       ROOMS[roomId].messages.push({
         name: name,
         message: message,
       })
-      
+
       updateInformation()
     }
   });

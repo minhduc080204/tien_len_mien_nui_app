@@ -1,61 +1,53 @@
 import React, { Component } from "react"
 import HandCard from "./components/HandCard"
+import { CountdownCircleTimer } from "react-countdown-circle-timer"
+import { Fade } from "react-bootstrap"
 
 class PlayArea extends Component {    
     render() {
         const {
-            onGetHand,
+            isPlaying,
+            isTurn,
+            onEndOfTime,
             onSortCart,
             onAttack,
             renderCard,
             hand,
         } = this.props
-        return (<React.Fragment>
-            <button onClick={onGetHand}>Chia bài</button>            
-            <div className="playarea">
-                <HandCard
-                    renderCard = {(card)=>renderCard(card)}
-                    hand={hand}
-                />
-                <button onClick={
-                    onSortCart
-                }>Xếp Bài</button>
-                <button
-                    onClick={
-                        onAttack
-                    }
-                >Đánh bài</button>
-            </div>
+        
+        return (<React.Fragment>            
+            <Fade in={isPlaying}>
+                <div className="playarea">
+                    <div className="circletime">
+                        <CountdownCircleTimer
+                            key={isTurn}
+                            size={130}
+                            isPlaying={isTurn}
+                            duration={13}
+                            colors={["#004777", "#F7B801", "#A30000", "#A30000"]}
+                            colorsTime={[10, 6, 3, 0]}
+                            onComplete={()=>{onEndOfTime()}}
+                        >
+                        </CountdownCircleTimer>
+                    </div>
+                    <HandCard
+                        renderCard = {(card)=>renderCard(card)}
+                        hand={hand}
+                    />
+                    <div className="playbutton">
+                        <button
+                            onClick={
+                                onAttack
+                            }
+                        >Đánh bài</button>
+                        <button onClick={
+                            onSortCart
+                        }>Xếp Bài</button>
+                    </div>
+                </div>
+            </Fade> 
         </React.Fragment>)
     }
 }
 
 export default PlayArea
-
-// const [hand1, setHand1] = useState([])
-    // const [hand1_sort, setHandSort1] = useState([])
-    // const [hand1_not_sort, setHandNotSort1] = useState([])
-    // const [check_sort, setCheckSort] = useState(1);
-
-    // const getHand = async () => {
-    //     let res = await dealCard();
-    //     setHand1([...res])
-    //     setHandNotSort1([...res]);
-    //     setHandSort1([...res].sort((a, b) => a.rank - b.rank));
-    // }
-
-
-    
-
-    // const handleAttack = async () => {
-    //     try {
-    //         let response = await attack(100);
-    //         console.log(response.data); // Xử lý response từ server
-    //     } catch (error) {
-    //         console.error(error); // Xử lý lỗi nếu yêu cầu thất bại
-    //     }
-    // }
-
-    // useEffect(() => {
-    //     getHand()
-    // }, []);

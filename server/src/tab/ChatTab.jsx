@@ -13,17 +13,35 @@ class ChatTab extends Component {
         const ROOMS = this.props.ROOMS
         const chatRoomIdSelected = this.props.chatRoomIdSelected
 
-        if (ROOMS && chatRoomIdSelected) {            
+        if (ROOMS && chatRoomIdSelected) {
             if (chatRoomIdSelected == 0) {
                 return ROOMS.map((room, key) => {
-                    return <p key={key} className="messageAll">{room.messages&&(room.messages.map((message, key2)=>{
-                        return <p key={key2}><span className="fw-bold ">{`Room: ${room.roomId} | ${message.name}`}: </span><label>{message.message}</label></p>
-                    }))}</p>                                         
+                    return <p key={key} className="messageAll">{
+                        room.messages && (room.messages.map((message, key2) => {
+                            return <p key={key2}>
+                                <span className="fw-bold ">{`Room: ${room.roomId} | ${message.name}`}: </span>
+                                <label>{message.message}</label>
+                            </p>
+                        }))
+                    }</p>
                 })
             } else {
-                return <p className="messageAll">{ROOMS[chatRoomIdSelected].messages&&(ROOMS[chatRoomIdSelected].messages.map((message, key) => {
-                    return <p key={key}><span className="fw-bold ">{`Room: ${chatRoomIdSelected} | ${message.name}`}: </span><label>{message.message}</label></p>
-                }))}</p>                                                                         
+                return (
+                    <p className="messageAll">
+                        {ROOMS[chatRoomIdSelected] && ROOMS[chatRoomIdSelected].messages &&
+                            ROOMS[chatRoomIdSelected].messages.map((message, key) => {
+                                return (
+                                    <p key={key}>
+                                        <span className="fw-bold">
+                                            {`Room: ${chatRoomIdSelected} | ${message.name}`}:
+                                        </span>
+                                        <label>{message.message}</label>
+                                    </p>
+                                );
+                            })
+                        }
+                    </p>
+                );
             }
         }
     }
@@ -52,11 +70,11 @@ class ChatTab extends Component {
                     <Form.Control
                         placeholder={chatRoomIdSelected == 0 ? "Thông báo cho tất cả..." : "Thông báo cho roomId " + chatRoomIdSelected + "..."}
                         aria-label={chatRoomIdSelected == 0 ? "Thông báo cho tất cả..." : "Thông báo cho roomId " + chatRoomIdSelected + "..."}
-                        onChange={onChangeMessage()}    
-                        value={message}                    
+                        onChange={onChangeMessage()}
+                        value={message}
                         aria-describedby="basic-addon2"
                     />
-                    <Button variant="outline-secondary" id="button-addon2" onClick={()=>onSendMessage()}>
+                    <Button variant="outline-secondary" id="button-addon2" onClick={() => onSendMessage()}>
                         Gửi
                     </Button>
                 </InputGroup>
