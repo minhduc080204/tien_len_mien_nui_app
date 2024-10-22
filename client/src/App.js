@@ -1,5 +1,6 @@
 import { Component } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
+import { PacmanLoader } from 'react-spinners';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.scss';
 import GamePage from './pages/GamePage';
@@ -9,16 +10,45 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      isLoading: false,
       login: false,
       roomId: 1000,
+      userId: Date.now(),
       userName: null,
       messages: [],
-      roomIDEntry: null,
+      players: [],
     }
   }
 
   componentDidMount() {
     window.api.connectTCP();
+
+    window.api.onTCPData((data) => {
+
+      if (data.type == 'FULL') {
+        toast.error(data.message)
+        this.setState({ isLoading: false })
+      }
+
+      if (data.type == 'JOINOK') {
+        const pls = data.players?data.players: [];
+        while (pls[0].userId != this.state.userId) {
+          pls.unshift(pls.pop())
+        }
+        pls.shift();        
+
+        this.setState({
+          login: true,
+          isLoading: false,
+          players: pls,
+        });
+
+        if(data.message){
+          toast.success("HAving FuN 🤞😘");
+        }
+
+      }
+    })
   }
 
   handleChangeUserName = () => (event) => {
@@ -26,7 +56,7 @@ class App extends Component {
       userName: event.target.value
     });
   }
-  
+
   handleChangeRoomId = () => (event) => {
     this.setState({
       roomId: event.target.value
@@ -34,37 +64,20 @@ class App extends Component {
   }
 
   handleLogin = () => {
-    toast.success("HAving FuN 🤞😘")
+    this.setState({ isLoading: true })
 
     const mess = {
       roomId: this.state.roomId,
+      userId: this.state.userId,
       name: this.state.userName,
       message: "",
       type: 'JOIN',
     }
     window.api.sendTCP(JSON.stringify(mess));
-    this.setState({
-      login: true,
-      roomIDEntry: this.state.roomId,
-    });
-    return (
-      <ToastContainer
-        position="top-right"
-        autoClose={2500}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
-    )
   }
 
   handleLogout = () => {
-    toast.error("Lỗi: không thể tham gia !")
+    toast.success("Hẹn lặp lại !")
 
     const mess = {
       roomId: this.state.roomId,
@@ -72,14 +85,30 @@ class App extends Component {
       message: "",
       type: 'OUT',
     }
-    window.api.sendTCP(JSON.stringify(mess));    
+    window.api.sendTCP(JSON.stringify(mess));
     this.setState({
       login: false,
+      roomId: 1000,
     });
   }
 
   render() {
     const visibleLogin = !this.state.login;
+
+    if (this.state.isLoading) {
+      return (
+        <div className="loading">
+          <PacmanLoader
+            color={'green'}
+            loading={true}
+            // cssOverride={override}
+            size={50}
+            aria-label="Loading Spinner"
+            data-testid="loader"
+          />
+        </div>
+      )
+    }
 
     if (!this.state.login) {
       return (
@@ -95,6 +124,7 @@ class App extends Component {
     return (<>
       <GamePage
         roomId={this.state.roomId}
+        players={this.state.players}
         userName={this.state.userName}
         visible={!visibleLogin}
         onLogout={this.handleLogout}

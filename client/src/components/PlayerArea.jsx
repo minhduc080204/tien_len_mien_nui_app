@@ -4,11 +4,10 @@ import { CountdownCircleTimer } from "react-countdown-circle-timer";
 
 class PlayerArea extends Component {
     render() {
-        const { isPlayer1, player, onEndOfTime } = this.props;
+        const {  player, onEndOfTime } = this.props;
         return (
-            <Fade in={player.isIn}>
-                <div className={isPlayer1 ? "player player1" : "player"}>
-
+            <Fade in={player}>
+                <div className="player">
                     <div>
                         <h1>{player.name}</h1>
                         <CountdownCircleTimer
@@ -23,8 +22,8 @@ class PlayerArea extends Component {
                         </CountdownCircleTimer>
                     </div>
 
-                    <div className="backcard">
-                        <h1>{player.number && player.number}</h1>
+                    <div className={player.isReady?"backcard border rounded border-5 border-success":"backcard"}>
+                        <h1>{player.hand.length && player.hand.length}</h1>
                     </div>
                 </div>
             </Fade>

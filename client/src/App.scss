@@ -60,7 +60,7 @@ button {
 
   .boxMessages {
     width: 100%;
-    height: 30vh;
+    height: 23vh;
     width: 250;
     height: 250;
     overflow-y: auto;
@@ -271,12 +271,19 @@ button {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
       0 0 30px rgba(255, 215, 0, 0.6);
     transform: scale(1.05);
-    transition: 300ms ;
+    transition: 300ms ;    
   }
 
+  .skipTurn{
+    background-color: #df770f;
+    color: white;
+
+    position: absolute;
+    right: 50px;
+    bottom: 370px;
+  }
+  
 }
-
-
 
 .player {
   width: fit-content;
@@ -303,8 +310,9 @@ button {
   }
 
   &:nth-of-type(1) {
-    bottom: 310px;
+    bottom: 350px;
     right: 10px;
+    flex-direction: row-reverse;
   }
 
   &:nth-of-type(2) {
@@ -313,11 +321,7 @@ button {
   }
 
   &:nth-of-type(3) {
-    bottom: 310px;
+    bottom: 350px;
     left: 10px;
   }
-}
-
-.player1 {
-  flex-direction: row-reverse;
 }

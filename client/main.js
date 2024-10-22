@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const net = require('net');
+const { log } = require('console');
 
 const PORT = 12345;
 const HOST = '0.0.0.0';
@@ -33,9 +34,11 @@ app.whenReady().then(() => {
             });
 
             tcpClient.on('data', (data) => {
-                mainWindow.webContents.send('tcp-data', JSON.parse(data));
-                console.log("ok ", JSON.parse(data));
-
+                try{
+                    mainWindow.webContents.send('tcp-data', JSON.parse(data));
+                } catch(error){
+                    console.log(error);                    
+                }
             });
 
             tcpClient.on('end', () => {

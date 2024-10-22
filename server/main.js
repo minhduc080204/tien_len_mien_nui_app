@@ -14,24 +14,27 @@ const ranks = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 20];
 const suits = [1, 2, 3, 4];
 let desk = []
 
-ROOMS[0] = {
-  messages: [{ name: "test", message: "alooooooo" }],
-  players: [
-    {
-      socket: "",
-      hand: [{
-        rank: 1,
-        suit: 1,
-      }],
-      status: false,
-    }
-  ],
-  desk: [{
-    rank: 1,
-    suit: 1,
-  }],
-  card: [],
-}
+// ROOMS[0] = {
+//   messages: [{ name: "test", message: "alooooooo" }],
+//   players: [
+//     {
+//       socket: "",
+//       userId: "",
+//       name: "",
+//       isTurn: false,
+//       isReady: false,
+//       hand: [{
+//         rank: 1,
+//         suit: 1,
+//       }],
+//     }
+//   ],
+//   desk: [{
+//     rank: 1,
+//     suit: 1,
+//   }],
+//   card: [],
+// }
 
 
 
@@ -56,6 +59,35 @@ const DESK = shuffle(desk);
 
 let tcpServer;
 let mainWindow;
+
+function updateInformationGame(roomId, message) {
+  if (!ROOMS[roomId]) {
+    return;
+  }
+
+  if (!ROOMS[roomId].players) {
+    return;
+  }
+
+  const playersCopy = ROOMS[roomId].players.map(player => ({ ...player }));
+  ROOMS[roomId].players.forEach((player, index) => {
+    if (!playersCopy[index].hand) {
+      playersCopy[index].hand = []
+    }
+    // playersCopy[index].number=playersCopy[index].hand.length
+    // delete playersCopy[index].hand;          
+    // delete playersCopy[index].socket;
+    player.socket.write(JSON.stringify({
+      roomId: roomId,
+      name: 'THÔNG BÁO',
+      type: 'JOINOK',
+      message: message,
+      players: playersCopy,
+    }));
+  });
+
+
+}
 
 function updateInformation() {
   let roomstmp = []
@@ -101,7 +133,7 @@ app.whenReady().then(() => {
 
         socket.on('data', (data) => {
           try {
-            const { roomId, name, message, type } = JSON.parse(data);
+            const { roomId, userId, isReady, name, message, type } = JSON.parse(data);
 
             if (type === 'JOIN') {
               if (!ROOMS[roomId]) {
@@ -113,15 +145,25 @@ app.whenReady().then(() => {
                 ROOMS[roomId].messages = [];
               }
 
-              if (ROOMS[roomId].players.length > 3) {
-                console.log("FULL PLAYER");
+              if (ROOMS[roomId].players.length >= 4) {
+                socket.write(JSON.stringify({
+                  type: 'FULL', message: `Phòng ${roomId} đã đầy!!`
+                }));
                 return;
               }
 
-              ROOMS[roomId].players.push({ id: socket.id, socket: socket, hand: null });
-              ROOMS[roomId].players.forEach((player) => {
-                player.socket.write(JSON.stringify({ roomId: roomId, name: 'THÔNG BÁO', message: `Anh ${name} tới chơi. YEAH !!` }));
+              ROOMS[roomId].players.push({
+                isTurn: true,
+                isReady: false,
+                name: name,
+                userId: userId,
+                socket: socket,
+                hand: []
               });
+
+              const ms = `Anh ${name} tới chơi. YEAH !!`
+              updateInformationGame(roomId, ms);
+
               console.log(`Client joined room ${roomId}`);
             }
 
@@ -132,6 +174,7 @@ app.whenReady().then(() => {
                 return;
               }
               ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);
+              updateInformationGame(roomId);
             }
 
             if (type === 'CHAT') {
@@ -182,6 +225,21 @@ app.whenReady().then(() => {
                 }
               });
 
+            }
+
+            if (type == 'SKIP') {
+
+            }
+
+            if (type == 'READY') {
+              ROOMS[roomId].players.forEach((player) => {
+                if (player.socket == socket) {
+                  console.log(data);
+                  
+                  player.isReady = isReady;
+                }
+              })
+              updateInformationGame(roomId);
             }
 
           } catch (error) {

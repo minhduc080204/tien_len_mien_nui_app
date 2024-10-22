@@ -35,14 +35,9 @@ class PlayArea extends Component {
                         hand={hand}
                     />
                     <div className="playbutton">
-                        <button
-                            onClick={
-                                onAttack
-                            }
-                        >Đánh bài</button>
-                        <button onClick={
-                            onSortCart
-                        }>Xếp Bài</button>
+                        <button onClick={ onAttack } >Đánh bài</button>
+                        <button onClick={ onSortCart }>Xếp Bài</button>                                            
+                        <button className="skipTurn" onClick={ onEndOfTime }>Bỏ lượt</button>
                     </div>
                 </div>
             </Fade> 
