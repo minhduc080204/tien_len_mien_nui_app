@@ -4,7 +4,7 @@ import { CountdownCircleTimer } from "react-countdown-circle-timer";
 
 class PlayerArea extends Component {
     render() {
-        const {  player, onEndOfTime } = this.props;
+        const {  player } = this.props;
         return (
             <Fade in={player}>
                 <div className="player">
@@ -14,10 +14,10 @@ class PlayerArea extends Component {
                             key={player.isTurn && player.isTurn}
                             size={130}
                             isPlaying={player.isTurn && player.isTurn}
-                            duration={3}
+                            duration={20}
                             colors={["#004777", "#F7B801", "#A30000", "#A30000"]}
                             colorsTime={[10, 6, 3, 0]}
-                            onComplete={() => { onEndOfTime() }}
+                            onComplete={() => {  }}
                         >
                         </CountdownCircleTimer>
                     </div>

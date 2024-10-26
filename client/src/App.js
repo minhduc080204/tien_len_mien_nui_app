@@ -124,6 +124,7 @@ class App extends Component {
     return (<>
       <GamePage
         roomId={this.state.roomId}
+        userId={this.state.userId}
         players={this.state.players}
         userName={this.state.userName}
         visible={!visibleLogin}

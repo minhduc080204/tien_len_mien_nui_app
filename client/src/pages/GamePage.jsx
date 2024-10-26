@@ -5,6 +5,7 @@ import ChatRoom from "../components/ChatRoom";
 import PlayerArea from "../components/PlayerArea";
 import PlayArea from "../components/playarea/PlayArea";
 import BackCard from "../components/playarea/components/BackCard";
+import { CountdownCircleTimer } from "react-countdown-circle-timer";
 
 class GamePage extends Component {
     constructor(props) {
@@ -15,21 +16,54 @@ class GamePage extends Component {
             messages: [],
             message: "",
             onMic: false,
-            stompClient: null,
             isPlaying: false,
-            isTurn: true,
+            isTurn: false,
             isReady: false,
+            isAllReady: false,
         }
 
     }
 
     componentDidMount() {
         if (this.props.roomId) {
-            window.api.onTCPData((data) => {
+            window.api.onTCPData((data) => {                                
+                // console.log("dataooRR", data.isAllReady);
+
+                // console.log("dataoo", data);
+
+                // console.log("ISTURN", data.isTurn);
+
+                if (data.players){
+                    console.log(data.players);
+                    data.players.forEach((player)=>{
+                        if(player.userId==this.props.userId){
+                            this.setState({
+                                hand: player.hand,
+                                isPlaying: true,
+                                isTurn: player.isTurn,
+                            })
+                        }
+                    })
+                }
+
+                if (data.isAllReady) {
+                    this.setState({
+                        isAllReady: true,
+                    })                    
+                }
+
+                if (data.isReady!==undefined) {
+                    this.setState({
+                        isReady: data.isReady
+                    })
+                    !this.state.isReady ? toast.success("Bạn đã sẵn sàng.") : toast.success("Bạn hủy sẵn sàng.")
+                    return;
+                }
 
                 if (data.hand) {
                     this.setState({
-                        hand: data.hand
+                        hand: data.hand,
+                        isPlaying: true,
                     })
                     return;
                 }
@@ -41,9 +75,8 @@ class GamePage extends Component {
                     return;
                 }
 
-                console.log("data", data);
-                
-                if(data.message){
+
+                if (data.message) {
                     this.setState((prevState) => ({
                         messages: [...prevState.messages, data]
                     }));
@@ -61,7 +94,7 @@ class GamePage extends Component {
         }
         window.api.sendTCP(JSON.stringify(mess));
         this.setState({
-            isPlaying: true,
+
             isTurn: true,
         })
     }
@@ -98,22 +131,19 @@ class GamePage extends Component {
             toast.error("Đang trong trận")
             return;
         }
-
-        if(this.state.isReady){
-            toast()
-        }
-        !this.state.isReady?toast.success("Bạn đã sẵn sàng."): toast.success("Bạn hủy sẵn sàng.")
+                
         const mess = {
             roomId: this.props.roomId,
             userId: this.props.userId,
             isReady: !this.state.isReady,
             type: 'READY',
         }
+
         window.api.sendTCP(JSON.stringify(mess));
 
-        this.setState({
-            isReady: !this.state.isReady,
-        })
+        // this.setState({
+        //     isReady: !this.state.isReady,
+        // })
     }
 
     handleAttack = () => {
@@ -185,7 +215,9 @@ class GamePage extends Component {
 
         this.setState({
             hand: handTmp,
+            isTurn: false,
         })
+        
     }
 
     checkValidCard = (cardSelected) => {
@@ -224,18 +256,31 @@ class GamePage extends Component {
 
 
     handleEndOfTime() {
-        this.setState(prevState => ({
-
-        }))
+        this.setState({
+            isTurn: false,
+            card: []
+        })
 
         const mess = {
-            // roomId: this.props.roomId,
-            // name: this.props.userName,
+            roomId: this.props.roomId,
+            // name: this.props.cuserName,
             // hand: handTmp,
             // card: cardSelected,
             type: 'SKIP',
         }
         window.api.sendTCP(JSON.stringify(mess));
+    }
+
+    handleEndOfTimeCircleMiddle() {
+        const mess = {
+            roomId: this.props.roomId,
+            name: this.props.userName,
+            type: 'START',
+        }
+        window.api.sendTCP(JSON.stringify(mess));
+        this.setState({
+            isAllReady: false,
+        })
     }
 
     handleMicClick = () => {
@@ -358,11 +403,25 @@ class GamePage extends Component {
                             <PlayerArea
                                 key={index}
                                 player={player}
-                                onEndOfTime={() => this.handleEndOfTime()}
                             />
                         );
                     })}
                 </div>
+                <Fade in={this.state.isAllReady && this.state.isReady}>
+                    <div className="circleTimeMiddle">
+                        <CountdownCircleTimer
+                            key={this.state.isAllReady && this.state.isReady}
+                            size={130}
+                            isPlaying={this.state.isAllReady && this.state.isReady}
+                            duration={5}
+                            colors={["#004777", "#F7B801", "#A30000", "#A30000"]}
+                            colorsTime={[10, 6, 3, 0]}
+                            onComplete={() => { this.handleEndOfTimeCircleMiddle() }}
+                            >
+                        </CountdownCircleTimer>
+                        <h2>Sẵn sàn để chơi !</h2>
+                    </div>
+                </Fade>
 
                 <ToastContainer
                     position="top-left"

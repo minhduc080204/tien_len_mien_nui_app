@@ -23,7 +23,7 @@ class PlayArea extends Component {
                             key={isTurn}
                             size={130}
                             isPlaying={isTurn}
-                            duration={13}
+                            duration={20}
                             colors={["#004777", "#F7B801", "#A30000", "#A30000"]}
                             colorsTime={[10, 6, 3, 0]}
                             onComplete={()=>{onEndOfTime()}}
