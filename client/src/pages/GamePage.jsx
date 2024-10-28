@@ -26,20 +26,20 @@ class GamePage extends Component {
 
     componentDidMount() {
         if (this.props.roomId) {
-            window.api.onTCPData((data) => {                                
+            window.api.onTCPData((data) => {
                 // console.log("dataooRR", data.isAllReady);
 
                 // console.log("dataoo", data);
 
                 // console.log("ISTURN", data.isTurn);
 
-                if (data.players){
-                    console.log(data.players);
-                    data.players.forEach((player)=>{
-                        if(player.userId==this.props.userId){
+                if (data.players) {
+                    console.log(data.players, "dataPLayer");
+                    data.players.forEach((player) => {
+                        if (player.userId == this.props.userId) {
                             this.setState({
                                 hand: player.hand,
-                                isPlaying: true,
+                                isPlaying: player.hand.length == 0 ? false : true,
                                 isTurn: player.isTurn,
                             })
                         }
@@ -49,10 +49,10 @@ class GamePage extends Component {
                 if (data.isAllReady) {
                     this.setState({
                         isAllReady: true,
-                    })                    
+                    })
                 }
 
-                if (data.isReady!==undefined) {
+                if (data.isReady !== undefined) {
                     this.setState({
                         isReady: data.isReady
                     })
@@ -131,7 +131,7 @@ class GamePage extends Component {
             toast.error("Đang trong trận")
             return;
         }
-                
+
         const mess = {
             roomId: this.props.roomId,
             userId: this.props.userId,
@@ -178,6 +178,52 @@ class GamePage extends Component {
         }
 
         if (this.state.card.length != 0) {
+
+            // chặt heo
+            if (this.state.card[0].rank == 20) {
+                // 1 heo
+                if (this.state.card.length == 1) {
+                    if (cardSelected.length == 4) {
+                        if (cardSelected[0].rank == cardSelected[1].rank) {
+                            const mess = {
+                                roomId: this.props.roomId,
+                                name: this.props.userName,
+                                hand: handTmp,
+                                card: cardSelected,
+                                type: 'ATTACK',
+                            }
+                            window.api.sendTCP(JSON.stringify(mess));
+
+                            this.setState({
+                                hand: handTmp,
+                                isTurn: false,
+                            })
+                        }
+                    }
+                }
+                // 2 heo
+                if (this.state.card.length == 1) {
+                    if (cardSelected.length == 8) {
+                        if (cardSelected[0].rank == cardSelected[1].rank) {
+                            const mess = {
+                                roomId: this.props.roomId,
+                                name: this.props.userName,
+                                hand: handTmp,
+                                card: cardSelected,
+                                type: 'ATTACK',
+                            }
+                            window.api.sendTCP(JSON.stringify(mess));
+
+                            this.setState({
+                                hand: handTmp,
+                                isTurn: false,
+                            })
+                        }
+                    }
+                }
+                return;
+            }
+
             // số lượng bài đánh khác số lượng bài trên bàn
             if (this.state.card.length != cardSelected.length) {
                 toast("Bài đánh không hợp lệ !1")
@@ -217,7 +263,7 @@ class GamePage extends Component {
             hand: handTmp,
             isTurn: false,
         })
-        
+
     }
 
     checkValidCard = (cardSelected) => {
@@ -256,9 +302,17 @@ class GamePage extends Component {
 
 
     handleEndOfTime() {
+        if(!this.state.isTurn){
+            toast.error('Chưa tới lượt');
+            return;
+        }
+
+        if(!this.state.card.length==0){
+            toast.error('Không thể bỏ lượt');
+            return;
+        }
         this.setState({
             isTurn: false,
-            card: []
         })
 
         const mess = {
@@ -417,7 +471,7 @@ class GamePage extends Component {
                             colors={["#004777", "#F7B801", "#A30000", "#A30000"]}
                             colorsTime={[10, 6, 3, 0]}
                             onComplete={() => { this.handleEndOfTimeCircleMiddle() }}
-                            >
+                        >
                         </CountdownCircleTimer>
                         <h2>Sẵn sàn để chơi !</h2>
                     </div>
