@@ -1,18 +1,21 @@
-import { Component } from "react";
+import { Component, createRef } from "react";
 import { Fade } from "react-bootstrap";
 import { ToastContainer } from "react-toastify";
 
-class HomePage extends Component {
+class HomePage extends Component {    
+
     render() {
         const {
             onChangeUserName,
             onChangeRoomId,
+            onSoundClick,
+            isPlaying,
             onLogin,
             visible
         } = this.props
 
         return (<Fade in={visible} >
-            <div>
+            <div>                
                 <ToastContainer
                     position="top-right"
                     autoClose={2500}
@@ -25,6 +28,7 @@ class HomePage extends Component {
                     pauseOnHover
                     theme="light"
                 />
+                <button onClick={()=>onSoundClick()}><i className={isPlaying?"bi bi-volume-up":"bi bi-volume-mute"}></i></button>
                 <form className="home_page" style={{ display: visible ? '' : 'none' }} onSubmit={onLogin}>
                     <h1>TIẾN LÊN MIỀN NÚI</h1>
                     <div className="form_home">
@@ -39,7 +43,7 @@ class HomePage extends Component {
                             placeholder="Nhập id phòng" onChange={onChangeRoomId()} required
                         />
                     </div>
-                    <button id="homeButton" type="submit">Tham gia</button>                    
+                    <button id="homeButton" type="submit">Tham gia</button>
                 </form>
             </div>
         </Fade >);

@@ -255,7 +255,7 @@ app.whenReady().then(() => {
               });
 
 
-              updateInformationGame(roomId, null, false);
+              updateInformationGame(roomId, 'ATTACK82041704', false);
             }
 
             if (type == 'SKIP') {

@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { Component, createRef } from 'react';
 import { PacmanLoader } from 'react-spinners';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,9 +9,11 @@ import HomePage from './pages/HomePage';
 class App extends Component {
   constructor(props) {
     super(props);
+    this.audioRefBackground = createRef();
     this.state = {
       isLoading: false,
-      login: false,
+      isPlayingBackground: true,
+      isLogin: false,
       roomId: 1000,
       userId: Date.now(),
       userName: null,
@@ -21,9 +23,17 @@ class App extends Component {
   }
 
   componentDidMount() {
+    const audio = this.audioRefBackground.current;
+    audio.loop = this.props.loop || true;
+    audio.play().catch((error) => {
+      console.error("Audio playback failed:", error);
+    });
+
     window.api.connectTCP();
 
     window.api.onTCPData((data) => {
+      console.log("ĐT", data);
+
 
       if (data.type == 'FULL') {
         toast.error(data.message)
@@ -31,19 +41,19 @@ class App extends Component {
       }
 
       if (data.type == 'JOINOK') {
-        const pls = data.players?data.players: [];
+        const pls = data.players ? data.players : [];
         while (pls[0].userId != this.state.userId) {
           pls.unshift(pls.pop())
         }
-        pls.shift();        
+        pls.shift();
 
         this.setState({
-          login: true,
+          isLogin: true,
           isLoading: false,
           players: pls,
         });
 
-        if(data.message){
+        if (data.message && data.messages != 'ATTACK82041704') {
           toast.success("HAving FuN 🤞😘");
         }
 
@@ -87,54 +97,76 @@ class App extends Component {
     }
     window.api.sendTCP(JSON.stringify(mess));
     this.setState({
-      login: false,
+      isLogin: false,
       roomId: 1000,
     });
   }
 
-  render() {
-    const visibleLogin = !this.state.login;
-
-    if (this.state.isLoading) {
-      return (
-        <div className="loading">
-          <PacmanLoader
-            color={'green'}
-            loading={true}
-            // cssOverride={override}
-            size={50}
-            aria-label="Loading Spinner"
-            data-testid="loader"
-          />
-        </div>
-      )
+  playBackgroundSound = () => {
+    const audio = this.audioRefBackground.current;
+    if (this.state.isPlayingBackground) {
+      audio.pause();
+    } else {
+      try {
+        audio.play()
+      } catch { }
     }
+    this.setState((prevState) => ({
+      isPlayingBackground: !prevState.isPlayingBackground,
+    }));
+  };
 
-    if (!this.state.login) {
-      return (
-        <HomePage
-          visible={visibleLogin}
-          onChangeUserName={() => this.handleChangeUserName()}
-          onChangeRoomId={() => this.handleChangeRoomId()}
-          onLogin={() => this.handleLogin()}
-        ></HomePage>
-      )
-    }
+  renderLoading = () => {
+    return (
+      <div className="loading">
+        <PacmanLoader
+          color={'green'}
+          loading={true}
+          size={50}
+          aria-label="Loading Spinner"
+          data-testid="loader"
+        />
+      </div>
+    )
+  }
 
+  renderHomePage = () => {
+    return (
+      <HomePage
+        visible={!this.state.isLogin}
+        onChangeUserName={() => this.handleChangeUserName()}
+        onChangeRoomId={() => this.handleChangeRoomId()}
+        isPlaying={this.state.isPlayingBackground}
+        onSoundClick={() => this.playBackgroundSound()}
+        onLogin={() => this.handleLogin()}
+      ></HomePage>
+    )
+  }
+
+  renderGamePage = () => {
     return (<>
       <GamePage
         roomId={this.state.roomId}
         userId={this.state.userId}
         players={this.state.players}
         userName={this.state.userName}
-        visible={!visibleLogin}
-        onLogout={this.handleLogout}
+        visible={this.state.isLogin}
+        onLogout={() => this.handleLogout()}
+        isPlaying={this.state.isPlayingBackground}
+        onSoundClick={() => this.playBackgroundSound()}
       ></GamePage>
-
-      {/* <ErrorPage></ErrorPage> */}
 
     </>);
   }
-}
 
+  render() {
+    return (<>
+      <audio
+        ref={this.audioRefBackground}
+        src="./assets/sound/background.mp3"
+      />
+      {this.state.isLoading ? this.renderLoading() : this.state.isLogin ? this.renderGamePage() : this.renderHomePage()}
+    </>)
+  }
+}
 export default App;
