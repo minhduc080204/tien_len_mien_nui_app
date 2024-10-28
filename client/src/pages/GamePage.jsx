@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import { Fade } from "react-bootstrap";
 import { toast, ToastContainer } from "react-toastify";
 import ChatRoom from "../components/ChatRoom";
@@ -10,6 +10,9 @@ import { CountdownCircleTimer } from "react-countdown-circle-timer";
 class GamePage extends Component {
     constructor(props) {
         super(props);
+        this.audioRefShuffle = createRef();
+        this.audioRefAttack = createRef();
+        this.audioRefChat = createRef();
         this.state = {
             hand: [],
             card: [],
@@ -32,6 +35,9 @@ class GamePage extends Component {
                 // console.log("dataoo", data);
 
                 // console.log("ISTURN", data.isTurn);
+                if(data.message=='ATTACK82041704'){
+                    this.playSound(this.audioRefAttack.current);
+                }
 
                 if (data.players) {
                     console.log(data.players, "dataPLayer");
@@ -41,7 +47,7 @@ class GamePage extends Component {
                                 hand: player.hand,
                                 isPlaying: player.hand.length == 0 ? false : true,
                                 isTurn: player.isTurn,
-                            })
+                            })                            
                         }
                     })
                 }
@@ -75,8 +81,9 @@ class GamePage extends Component {
                     return;
                 }
 
-
+                
                 if (data.message) {
+                    this.playSound(this.audioRefChat.current);
                     this.setState((prevState) => ({
                         messages: [...prevState.messages, data]
                     }));
@@ -250,6 +257,8 @@ class GamePage extends Component {
             }
         }
 
+        this.playSound(this.audioRefAttack.current);
+
         const mess = {
             roomId: this.props.roomId,
             name: this.props.userName,
@@ -302,12 +311,12 @@ class GamePage extends Component {
 
 
     handleEndOfTime() {
-        if(!this.state.isTurn){
+        if (!this.state.isTurn) {
             toast.error('Chưa tới lượt');
             return;
         }
 
-        if(!this.state.card.length==0){
+        if (this.state.card.length == 0) {
             toast.error('Không thể bỏ lượt');
             return;
         }
@@ -325,7 +334,15 @@ class GamePage extends Component {
         window.api.sendTCP(JSON.stringify(mess));
     }
 
+    playSound = (ref) => {
+        const audio = ref;
+        try{
+            audio.play();
+        }catch{}
+    };    
+
     handleEndOfTimeCircleMiddle() {
+        this.playSound(this.audioRefShuffle);
         const mess = {
             roomId: this.props.roomId,
             name: this.props.userName,
@@ -337,7 +354,7 @@ class GamePage extends Component {
         })
     }
 
-    handleMicClick = () => {
+    handleMicClick = () => {        
         this.setState({
             onMic: !this.state.onMic
         });
@@ -413,10 +430,12 @@ class GamePage extends Component {
             roomId,
             onLogout,
             visible,
+            isPlaying,
+            onSoundClick,
         } = this.props
 
         return (<Fade in={visible}>
-            <div>
+            <div>                
                 <h2 style={{ color: "white" }}>Table ID: {roomId}</h2>
                 <ChatRoom
                     message={this.state.message}
@@ -426,6 +445,7 @@ class GamePage extends Component {
                     messages={this.state.messages}
                     onMicClick={() => { this.handleMicClick() }}
                 ></ChatRoom>
+                <button onClick={()=>onSoundClick()}><i className={isPlaying?"bi bi-volume-up":"bi bi-volume-mute"}></i></button>
                 <button onClick={() => {
                     onLogout();
                     this.setState({
@@ -437,11 +457,12 @@ class GamePage extends Component {
                     renderCard={(card) => this.renderCard(card)}
                     card={this.state.card}
                 ></BackCard>
+                
                 <button
                     className={this.state.isReady ? "bg-success text-white" : ""}
                     onClick={() => this.handleReady()}
                 >Sẵn sàng</button>
-                <button onClick={() => this.handleGetHand()}>Sẵn sangf</button>
+                
                 <PlayArea
                     hand={this.state.hand}
                     isPlaying={this.state.isPlaying}
@@ -476,6 +497,19 @@ class GamePage extends Component {
                         <h2>Sẵn sàn để chơi !</h2>
                     </div>
                 </Fade>
+
+                <audio
+                    ref={this.audioRefShuffle}
+                    src="./assets/sound/shuffle_card.mp3"
+                />
+                <audio
+                    ref={this.audioRefAttack}
+                    src="./assets/sound/attack_card.mp3"
+                />
+                <audio
+                    ref={this.audioRefChat}
+                    src="./assets/sound/chat.mp3"
+                />
 
                 <ToastContainer
                     position="top-left"
