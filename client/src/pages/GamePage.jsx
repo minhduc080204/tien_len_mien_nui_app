@@ -1,11 +1,12 @@
 import React, { Component, createRef } from "react";
 import { Fade } from "react-bootstrap";
+import { CountdownCircleTimer } from "react-countdown-circle-timer";
 import { toast, ToastContainer } from "react-toastify";
+import Peer from 'simple-peer';
 import ChatRoom from "../components/ChatRoom";
 import PlayerArea from "../components/PlayerArea";
 import PlayArea from "../components/playarea/PlayArea";
 import BackCard from "../components/playarea/components/BackCard";
-import { CountdownCircleTimer } from "react-countdown-circle-timer";
 
 class GamePage extends Component {
     constructor(props) {
@@ -13,30 +14,46 @@ class GamePage extends Component {
         this.audioRefShuffle = createRef();
         this.audioRefAttack = createRef();
         this.audioRefChat = createRef();
+        this.peerRef = createRef();
+        this.voiceRef = createRef();
+        this.streamRef = createRef();
+
         this.state = {
             hand: [],
             card: [],
             messages: [],
             message: "",
-            onMic: false,
             isPlaying: false,
             isTurn: false,
             isReady: false,
             isAllReady: false,
+            onMic: false,
         }
 
     }
 
-    componentDidMount() {
+    async componentDidMount() {
         if (this.props.roomId) {
+            toast.success("HAving FuN 🤞😘");
+            this.streamRef.current = await this.getMedia();
             window.api.onTCPData((data) => {
-                // console.log("dataooRR", data.isAllReady);
-
-                // console.log("dataoo", data);
-
-                // console.log("ISTURN", data.isTurn);
-                if(data.message=='ATTACK82041704'){
+                if (data.type == 'ATTACK') {
                     this.playSound(this.audioRefAttack.current);
+                }
+
+                if (data.type == 'JOIN') {
+                    if (data.userId && data.userId != this.props.userId) {
+                        this.newVoicer(this.props.userId, data.userId);
+                    }
+                }
+
+                if (data.type == 'offer') {
+                    this.handleOffer(data);
+                }
+
+                if (data.type == 'answer') {
+                    console.log("anssweee", data);
+                    this.handleAnswer(data);
                 }
 
                 if (data.players) {
@@ -47,7 +64,7 @@ class GamePage extends Component {
                                 hand: player.hand,
                                 isPlaying: player.hand.length == 0 ? false : true,
                                 isTurn: player.isTurn,
-                            })                            
+                            })
                         }
                     })
                 }
@@ -81,7 +98,7 @@ class GamePage extends Component {
                     return;
                 }
 
-                
+
                 if (data.message) {
                     this.playSound(this.audioRefChat.current);
                     this.setState((prevState) => ({
@@ -89,6 +106,7 @@ class GamePage extends Component {
                     }));
                 }
             });
+
         }
     }
 
@@ -322,6 +340,7 @@ class GamePage extends Component {
         }
         this.setState({
             isTurn: false,
+            isReady: false,
         })
 
         const mess = {
@@ -336,10 +355,10 @@ class GamePage extends Component {
 
     playSound = (ref) => {
         const audio = ref;
-        try{
+        try {
             audio.play();
-        }catch{}
-    };    
+        } catch { }
+    };
 
     handleEndOfTimeCircleMiddle() {
         this.playSound(this.audioRefShuffle);
@@ -352,12 +371,6 @@ class GamePage extends Component {
         this.setState({
             isAllReady: false,
         })
-    }
-
-    handleMicClick = () => {        
-        this.setState({
-            onMic: !this.state.onMic
-        });
     }
 
     renderCard = (card) => {
@@ -425,6 +438,141 @@ class GamePage extends Component {
         </>)
     }
 
+    handleMicClick = () => {
+        if (!this.voiceRef.current) {
+            return;
+        }
+
+        if (this.state.onMic) {
+            const audioTrack = this.streamRef.current.getAudioTracks()[0];
+            audioTrack.enabled = false;
+            this.voiceRef.current.forEach(audio => {
+                audio.pause();
+            });
+        } else {
+            const audioTrack = this.streamRef.current.getAudioTracks()[0];
+            audioTrack.enabled = true;
+            this.voiceRef.current.forEach(audio => {
+                audio.play();
+            });
+        }
+
+        this.setState({
+            onMic: !this.state.onMic
+        });
+    }
+
+    getMedia = async () => {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getAudioTracks()[0].enabled = false;
+        return stream;
+    };
+
+    newVoicer = async (offerId, answerId) => {
+
+
+        const newPeer = new Peer({
+            initiator: true,
+            trickle: false,
+            stream: this.streamRef.current,
+        });
+
+        newPeer.on('signal', (data) => {
+            const mess = {
+                roomId: this.props.roomId,
+                offerId: offerId,
+                answerId: answerId,
+                ...data,
+            }
+
+            window.api.sendTCP(JSON.stringify(mess));
+
+        });
+
+        newPeer.on('stream', (remoteStream) => {
+            const audioElement = document.createElement('audio');
+            audioElement.srcObject = remoteStream;
+            audioElement.pause();
+
+            if (!this.voiceRef.current) {
+                this.voiceRef.current = [];
+            }
+            this.voiceRef.current.push(audioElement);
+
+        });
+
+        if (!this.peerRef.current) {
+            this.peerRef.current = [];
+        }
+        this.peerRef.current.push({ answerId: answerId, peer: newPeer });
+
+    };
+
+    // Xử lý tín hiệu offer
+    handleOffer = async (dataInput) => {
+
+        const newPeer = new Peer({
+            initiator: false,
+            trickle: false,
+            stream: this.streamRef.current,
+        });
+
+        newPeer.on('signal', (data) => {
+            const mess = {
+                roomId: this.props.roomId,
+                offerId: dataInput.offerId,
+                answerId: dataInput.answerId,
+                ...data,
+            }
+
+            window.api.sendTCP(JSON.stringify(mess));
+        });
+
+        newPeer.on('stream', (remoteStream) => {
+            const audioElement = document.createElement('audio');
+            audioElement.srcObject = remoteStream;
+            audioElement.pause();
+
+            if (!this.voiceRef.current) {
+                this.voiceRef.current = [];
+            }
+            this.voiceRef.current.push(audioElement);
+        });
+
+        newPeer.signal({
+            type: dataInput.type,
+            sdp: dataInput.sdp,
+        });
+
+        if (!this.peerRef.current) {
+            this.peerRef.current = [];
+        }
+        this.peerRef.current.push({ answerId: dataInput.answerId, peer: newPeer });
+    };
+
+    // Xử lý tín hiệu answer từ đối tác
+    handleAnswer = (dataInput) => {
+        this.peerRef.current.forEach((peer) => {
+
+            if (peer.answerId == dataInput.answerId) {
+                peer.peer.signal({
+                    type: dataInput.type,
+                    sdp: dataInput.sdp,
+                })
+
+            }
+        })
+    };
+
+    // Kết thúc cuộc gọi
+    endCall = () => {
+        this.peerRef.current.forEach((peer) => {
+            peer.destroy();
+        })
+        this.peerRef.current = null;
+    };
+
+
     render() {
         const {
             roomId,
@@ -434,8 +582,11 @@ class GamePage extends Component {
             onSoundClick,
         } = this.props
 
+        console.log("refff", this.voiceRef.current);
+
+
         return (<Fade in={visible}>
-            <div>                
+            <div>
                 <h2 style={{ color: "white" }}>Table ID: {roomId}</h2>
                 <ChatRoom
                     message={this.state.message}
@@ -445,9 +596,10 @@ class GamePage extends Component {
                     messages={this.state.messages}
                     onMicClick={() => { this.handleMicClick() }}
                 ></ChatRoom>
-                <button onClick={()=>onSoundClick()}><i className={isPlaying?"bi bi-volume-up":"bi bi-volume-mute"}></i></button>
+                <button onClick={() => onSoundClick()}><i className={isPlaying ? "bi bi-volume-up" : "bi bi-volume-mute"}></i></button>
                 <button onClick={() => {
                     onLogout();
+                    this.endCall();
                     this.setState({
                         hand: [],
                         card: [],
@@ -457,12 +609,12 @@ class GamePage extends Component {
                     renderCard={(card) => this.renderCard(card)}
                     card={this.state.card}
                 ></BackCard>
-                
+
                 <button
                     className={this.state.isReady ? "bg-success text-white" : ""}
                     onClick={() => this.handleReady()}
                 >Sẵn sàng</button>
-                
+
                 <PlayArea
                     hand={this.state.hand}
                     isPlaying={this.state.isPlaying}
@@ -503,6 +655,10 @@ class GamePage extends Component {
                     src="./assets/sound/shuffle_card.mp3"
                 />
                 <audio
+                    ref={this.audioRefShuffle}
+                    src="./assets/sound/shuffle_card.mp3"
+                />
+                <audio
                     ref={this.audioRefAttack}
                     src="./assets/sound/attack_card.mp3"
                 />
@@ -510,6 +666,10 @@ class GamePage extends Component {
                     ref={this.audioRefChat}
                     src="./assets/sound/chat.mp3"
                 />
+
+                {this.state.peerConnected && (
+                    <audio ref={this.remoteAudioRef} autoPlay playsInline />
+                )}
 
                 <ToastContainer
                     position="top-left"

@@ -38,9 +38,10 @@ class App extends Component {
       if (data.type == 'FULL') {
         toast.error(data.message)
         this.setState({ isLoading: false })
+        return;
       }
 
-      if (data.type == 'JOINOK') {
+      if (data.type == 'JOIN') {
         const pls = data.players ? data.players : [];
         while (pls[0].userId != this.state.userId) {
           pls.unshift(pls.pop())
@@ -53,11 +54,21 @@ class App extends Component {
           players: pls,
         });
 
-        if (data.message && data.messages != 'ATTACK82041704') {
-          toast.success("HAving FuN 🤞😘");
-        }
+        return;
+      }      
 
+      if (data.type && !['CHAT', 'offer', 'answer'].includes(data.type)) {
+        const pls = data.players ? data.players : [];
+        while (pls[0].userId != this.state.userId) {
+          pls.unshift(pls.pop())
+        }
+        pls.shift();
+
+        this.setState({
+          players: pls,
+        });
       }
+
     })
   }
 

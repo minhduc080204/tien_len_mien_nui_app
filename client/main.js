@@ -5,6 +5,7 @@ const { log } = require('console');
 
 const PORT = 12345;
 const HOST = '0.0.0.0';
+// const HOST = '172.20.10.3';
 
 let mainWindow;
 let tcpClient;
@@ -21,6 +22,7 @@ function createWindow() {
     });
 
     mainWindow.loadURL('http://localhost:3001');    
+    // mainWindow.loadURL(`file://${path.join(__dirname, './build/index.html')}`);
 }
 
 app.whenReady().then(() => {

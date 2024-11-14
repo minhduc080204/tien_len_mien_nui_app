@@ -2,7 +2,6 @@ const { app, BrowserWindow } = require('electron/main')
 const path = require('node:path')
 const net = require('net');
 const { ipcMain } = require('electron');
-const { log } = require('node:console');
 
 const PORT = 12345;
 const HOST = '0.0.0.0';
@@ -22,7 +21,7 @@ ROOMS[0] = {
       userId: "",
       name: "",
       isTurn: false,
-      isReady: false,    
+      isReady: false,
       hand: [{
         rank: 1,
         suit: 1,
@@ -61,7 +60,7 @@ const DESK = shuffle(desk);
 let tcpServer;
 let mainWindow;
 
-function updateInformationGame(roomId, message, isAllReady) {
+function updateInformationGame(type, roomId, message, isAllReady, userId) {
   if (!ROOMS[roomId]) {
     return;
   }
@@ -81,8 +80,9 @@ function updateInformationGame(roomId, message, isAllReady) {
 
     let data = {
       roomId: roomId,
+      userId: userId,
       name: 'THÔNG BÁO',
-      type: 'JOINOK',
+      type: type,
       message: message,
       card: ROOMS[roomId].card,
       // players: playersCopy,
@@ -127,11 +127,13 @@ function createWindow() {
   mainWindow.loadURL('http://localhost:3000');
 }
 
+
+
 app.whenReady().then(() => {
-  createWindow()
+  createWindow();
 
   ipcMain.on('start-server', () => {
-    if (!tcpServer) {
+    if (!tcpServer) {      
       tcpServer = net.createServer((socket) => {
 
         ROOMALL.push(socket);
@@ -168,7 +170,7 @@ app.whenReady().then(() => {
               });
 
               const ms = `Anh ${name} tới chơi. YEAH !!`;
-              updateInformationGame(roomId, ms);
+              updateInformationGame('JOIN', roomId, ms, false, userId);
 
               console.log(`Client joined room ${roomId}`);
             }
@@ -180,7 +182,7 @@ app.whenReady().then(() => {
                 return;
               }
               ROOMS[roomId].players = ROOMS[roomId].players.filter(player => player.socket !== socket);
-              updateInformationGame(roomId);
+              updateInformationGame('OUT', roomId);
             }
 
             if (type === 'CHAT') {
@@ -198,6 +200,7 @@ app.whenReady().then(() => {
               ROOMS[roomId].desk = [...shuffle(DESK)];
               ROOMS[roomId].players.forEach((player) => {
                 player.hand = ROOMS[roomId].desk.splice(0, 13);
+                player.isReady = false;
                 if (player.socket == socket) {
                   player.isTurn = true;
                 } else {
@@ -205,14 +208,16 @@ app.whenReady().then(() => {
                 }
               });
 
-              updateInformationGame(roomId, null, false);
+
+
+              updateInformationGame('START', roomId, null, false);
             }
 
             if (type === 'ATTACK') {
               const card = JSON.parse(data).card;
               const hand = JSON.parse(data).hand;
 
-              ROOMS[roomId].card = card;              
+              ROOMS[roomId].card = card;
 
               ROOMS[roomId].players.forEach((player) => {
                 let isWin = false;
@@ -255,23 +260,23 @@ app.whenReady().then(() => {
               });
 
 
-              updateInformationGame(roomId, 'ATTACK82041704', false);
+              updateInformationGame('ATTACK', roomId, 'ATTACK82041704', false);
             }
 
             if (type == 'SKIP') {
               for (let i = 0; i < ROOMS[roomId].players.length; i++) {
-                if (ROOMS[roomId].players[i].socket == socket) {                  
+                if (ROOMS[roomId].players[i].socket == socket) {
                   if (i == ROOMS[roomId].players.length - 1) {
                     ROOMS[roomId].players[i].isTurn = false;
                     ROOMS[roomId].players[0].isTurn = true;
 
-                    if(ROOMS[roomId].players[0].userId==ROOMS[roomId].currentAttack){
+                    if (ROOMS[roomId].players[0].userId == ROOMS[roomId].currentAttack) {
                       ROOMS[roomId].card = [];
                     }
                   } else {
                     ROOMS[roomId].players[i].isTurn = false;
                     ROOMS[roomId].players[i + 1].isTurn = true;
-                    if(ROOMS[roomId].players[i+1].userId==ROOMS[roomId].currentAttack){
+                    if (ROOMS[roomId].players[i + 1].userId == ROOMS[roomId].currentAttack) {
                       ROOMS[roomId].card = [];
                     }
                   }
@@ -285,7 +290,7 @@ app.whenReady().then(() => {
 
 
 
-              updateInformationGame(roomId, null, false);
+              updateInformationGame('SKIP', roomId, null, false);
             }
 
             if (type == 'READY') {
@@ -302,9 +307,29 @@ app.whenReady().then(() => {
                   isAllReady = false;
                 }
               })
+              updateInformationGame('READY', roomId, null, isAllReady);
+            }            
+
+            console.log("ccc", JSON.parse(data));
 
 
-              updateInformationGame(roomId, null, isAllReady);
+            if (type=='offer'){
+              const {answerId} = JSON.parse(data)
+              ROOMS[roomId].players.forEach((player) => {
+                if (player.userId == answerId) {                  
+                  player.socket.write(data);
+                }                
+              })
+            }
+
+            if (type=='answer'){              
+              
+              const {offerId} = JSON.parse(data)
+              ROOMS[roomId].players.forEach((player) => {
+                if (player.userId == offerId) {
+                  player.socket.write(data);
+                }                
+              })
             }
 
           } catch (error) {
