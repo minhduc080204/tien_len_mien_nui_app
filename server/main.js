@@ -13,28 +13,28 @@ const ranks = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 20];
 const suits = [1, 2, 3, 4];
 let desk = []
 
-ROOMS[0] = {
-  messages: [{ name: "test", message: "alooooooo" }],
-  players: [
-    {
-      socket: "",
-      userId: "",
-      name: "",
-      isTurn: false,
-      isReady: false,
-      hand: [{
-        rank: 1,
-        suit: 1,
-      }],
-    }
-  ],
-  desk: [{
-    rank: 1,
-    suit: 1,
-  }],
-  card: [],
-  currentAttack: "",
-}
+// ROOMS[0] = {
+//   messages: [{ name: "test", message: "alooooooo" }],
+//   players: [
+//     {
+//       socket: "",
+//       userId: "",
+//       name: "",
+//       isTurn: false,
+//       isReady: false,
+//       hand: [{
+//         rank: 1,
+//         suit: 1,
+//       }],
+//     }
+//   ],
+//   desk: [{
+//     rank: 1,
+//     suit: 1,
+//   }],
+//   card: [],
+//   currentAttack: "",
+// }
 
 
 
