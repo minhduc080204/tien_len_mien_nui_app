@@ -5,7 +5,7 @@ const { log } = require('console');
 
 const PORT = 12345;
 const HOST = '0.0.0.0';
-// const HOST = '172.20.10.3';
+// const HOST = '172.20.10.6';
 
 let mainWindow;
 let tcpClient;

@@ -52,6 +52,8 @@ class GamePage extends Component {
                 if (data.type == 'JOIN') {
                     if (data.userId && data.userId != this.props.userId) {
                         this.newVoicer(this.props.userId, data.userId);
+                        console.log("OK voice jion");
+                        
                     }
                 }
 
@@ -448,6 +450,8 @@ class GamePage extends Component {
 
     handleMicClick = () => {
         if (!this.voiceRef.current) {
+            console.log("Voiceref is null");
+            
             return;
         }
 
@@ -578,7 +582,9 @@ class GamePage extends Component {
             return;
         }
         this.peerRef.current.forEach((peer) => {
-            peer.destroy();
+            if(peer){
+                peer.destroy();
+            }
         })
         this.peerRef.current = null;
     };
@@ -663,10 +669,7 @@ class GamePage extends Component {
                     </div>
                 </Fade>
 
-                <audio
-                    ref={this.audioRefShuffle}
-                    src="./assets/sound/shuffle_card.mp3"
-                />
+                
                 <audio
                     ref={this.audioRefShuffle}
                     src="./assets/sound/shuffle_card.mp3"
