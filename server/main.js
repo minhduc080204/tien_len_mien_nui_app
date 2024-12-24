@@ -332,6 +332,12 @@ app.whenReady().then(() => {
               })
             }
 
+            if (type === 'STOPROOM') {
+              ROOMS[roomId].players.forEach((player) => {
+                player.socket.write(data);
+              });
+            }
+
           } catch (error) {
             console.error('Error parsing data:', error);
           } finally {

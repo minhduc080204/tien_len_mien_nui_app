@@ -11,14 +11,19 @@ class OnlineTab extends Component {
         }
     }
 
-    handleStopRoom(roomId) {
+    handleShowStopRoom(roomId) {
         this.setState({
             isShowAlert: true,
             selectedRoomId: roomId,
         })
     }
 
-    stoproom() {
+    handleStopRoom() {
+        const mess = {
+            roomId: this.state.selectedRoomId,
+            type: 'STOPROOM',
+          }
+        window.api.sendTCP(JSON.stringify(mess));
         this.setState({
             isShowAlert: false,
             selectedRoomId: null,
@@ -46,7 +51,7 @@ class OnlineTab extends Component {
                                 </Col>
                                 <Col><Button
                                     variant="danger"
-                                    onClick={() => this.handleStopRoom(room.roomId)}
+                                    onClick={() => this.handleShowStopRoom(room.roomId)}
                                 >STOP</Button></Col>
                             </Row>
                         </Container>
@@ -65,10 +70,10 @@ class OnlineTab extends Component {
                     </p>
                     <hr />
                     <div className="d-flex justify-content-end gap-4">
-                        <Button onClick={() => this.stoproom()} variant="outline-secondary">
+                        <Button onClick={() => this.handleStopRoom()} variant="outline-secondary">
                             Cancel
                         </Button>
-                        <Button onClick={() => this.stoproom()} variant="outline-danger">
+                        <Button onClick={() => this.handleStopRoom()} variant="outline-danger">
                             STOP
                         </Button>
                     </div>

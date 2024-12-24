@@ -57,6 +57,11 @@ class App extends Component {
         return;
       }      
 
+      if(data.type == 'STOPROOM'){
+        toast.error("Sorry ! This room had been stopped");
+        return;
+      }
+
       if (data.type && !['CHAT', 'offer', 'answer'].includes(data.type)) {
         const pls = data.players ? data.players : [];
         while (pls[0].userId != this.state.userId) {

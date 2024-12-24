@@ -37,6 +37,14 @@ class GamePage extends Component {
             toast.success("HAving FuN 🤞😘");
             this.streamRef.current = await this.getMedia();
             window.api.onTCPData((data) => {
+
+                if (data.type == 'STOPROOM') {
+                    console.log("STOPPPPPPPPPPPPPPPp");
+                    
+                    toast.error("Sorry ! This room had been stopped");
+                    this.handleLogout();
+                }
+
                 if (data.type == 'ATTACK') {
                     this.playSound(this.audioRefAttack.current);
                 }
@@ -566,11 +574,23 @@ class GamePage extends Component {
 
     // Kết thúc cuộc gọi
     endCall = () => {
+        if(!this.peerRef.current){
+            return;
+        }
         this.peerRef.current.forEach((peer) => {
             peer.destroy();
         })
         this.peerRef.current = null;
     };
+
+    handleLogout=()=>{
+        this.props.onLogout();
+        this.endCall();
+        this.setState({
+            hand: [],
+            card: [],
+        })
+    }
 
 
     render() {
@@ -597,14 +617,7 @@ class GamePage extends Component {
                     onMicClick={() => { this.handleMicClick() }}
                 ></ChatRoom>
                 <button onClick={() => onSoundClick()}><i className={isPlaying ? "bi bi-volume-up" : "bi bi-volume-mute"}></i></button>
-                <button onClick={() => {
-                    onLogout();
-                    this.endCall();
-                    this.setState({
-                        hand: [],
-                        card: [],
-                    })
-                }}>Logout</button>
+                <button onClick={() => this.handleLogout()}>Logout</button>
                 <BackCard
                     renderCard={(card) => this.renderCard(card)}
                     card={this.state.card}
