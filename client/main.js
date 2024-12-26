@@ -4,8 +4,8 @@ const net = require('net');
 const { log } = require('console');
 
 const PORT = 12345;
-const HOST = '0.0.0.0';
-// const HOST = '172.20.10.6';
+// const HOST = '0.0.0.0';
+const HOST = '172.20.10.3';
 
 let mainWindow;
 let tcpClient;
@@ -21,7 +21,7 @@ function createWindow() {
         }
     });
 
-    mainWindow.loadURL('http://localhost:3001');    
+    mainWindow.loadURL('http://localhost:3000');
     // mainWindow.loadURL(`file://${path.join(__dirname, './build/index.html')}`);
 }
 
@@ -36,10 +36,11 @@ app.whenReady().then(() => {
             });
 
             tcpClient.on('data', (data) => {
-                try{
+                try {
+                    console.log("DATA", data);                    
                     mainWindow.webContents.send('tcp-data', JSON.parse(data));
-                } catch(error){
-                    console.log(error);                    
+                } catch (error) {
+                    console.log(error);
                 }
             });
 

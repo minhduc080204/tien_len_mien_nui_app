@@ -215,49 +215,49 @@ class GamePage extends Component {
         if (this.state.card.length != 0) {
 
             // chặt heo
-            if (this.state.card[0].rank == 20) {
-                // 1 heo
-                if (this.state.card.length == 1) {
-                    if (cardSelected.length == 4) {
-                        if (cardSelected[0].rank == cardSelected[1].rank) {
-                            const mess = {
-                                roomId: this.props.roomId,
-                                name: this.props.userName,
-                                hand: handTmp,
-                                card: cardSelected,
-                                type: 'ATTACK',
-                            }
-                            window.api.sendTCP(JSON.stringify(mess));
+            // if (this.state.card[0].rank == 20) {
+            //     // 1 heo
+            //     if (this.state.card.length == 1) {
+            //         if (cardSelected.length == 4) {
+            //             if (cardSelected[0].rank == cardSelected[1].rank) {
+            //                 const mess = {
+            //                     roomId: this.props.roomId,
+            //                     name: this.props.userName,
+            //                     hand: handTmp,
+            //                     card: cardSelected,
+            //                     type: 'ATTACK',
+            //                 }
+            //                 window.api.sendTCP(JSON.stringify(mess));
 
-                            this.setState({
-                                hand: handTmp,
-                                isTurn: false,
-                            })
-                        }
-                    }
-                }
-                // 2 heo
-                if (this.state.card.length == 1) {
-                    if (cardSelected.length == 8) {
-                        if (cardSelected[0].rank == cardSelected[1].rank) {
-                            const mess = {
-                                roomId: this.props.roomId,
-                                name: this.props.userName,
-                                hand: handTmp,
-                                card: cardSelected,
-                                type: 'ATTACK',
-                            }
-                            window.api.sendTCP(JSON.stringify(mess));
+            //                 this.setState({
+            //                     hand: handTmp,
+            //                     isTurn: false,
+            //                 })
+            //             }
+            //         }
+            //     }
+            //     // 2 heo
+            //     if (this.state.card.length == 1) {
+            //         if (cardSelected.length == 8) {
+            //             if (cardSelected[0].rank == cardSelected[1].rank) {
+            //                 const mess = {
+            //                     roomId: this.props.roomId,
+            //                     name: this.props.userName,
+            //                     hand: handTmp,
+            //                     card: cardSelected,
+            //                     type: 'ATTACK',
+            //                 }
+            //                 window.api.sendTCP(JSON.stringify(mess));
 
-                            this.setState({
-                                hand: handTmp,
-                                isTurn: false,
-                            })
-                        }
-                    }
-                }
-                return;
-            }
+            //                 this.setState({
+            //                     hand: handTmp,
+            //                     isTurn: false,
+            //                 })
+            //             }
+            //         }
+            //     }
+            //     return;
+            // }
 
             // số lượng bài đánh khác số lượng bài trên bàn
             if (this.state.card.length != cardSelected.length) {
@@ -582,7 +582,7 @@ class GamePage extends Component {
             return;
         }
         this.peerRef.current.forEach((peer) => {
-            if(peer){
+            if (peer && typeof peer.destroy === 'function') {
                 peer.destroy();
             }
         })
@@ -597,7 +597,6 @@ class GamePage extends Component {
             card: [],
         })
     }
-
 
     render() {
         const {
